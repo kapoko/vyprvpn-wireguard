@@ -1,0 +1,21 @@
+services:
+  vyprvpn:
+    build:
+      context: .
+    container_name: vyprvpn-wireguard
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    environment:
+      - VYPRVPN_USER=${VYPRVPN_USER}
+      - VYPRVPN_PASS=${VYPRVPN_PASS}
+      # eu1 is Amsterdam in Vypr’s server naming.
+      - VYPRVPN_SERVER=eu1
+      # Optional inbound VPN ports, e.g. torrents.
+      - VPN_INPUT_PORTS=31770
+      - TZ=Europe/Amsterdam
+    sysctls:
+      - net.ipv4.conf.all.src_valid_mark=1
+      - net.ipv6.conf.all.disable_ipv6=1
+    restart: unless-stopped
