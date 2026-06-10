@@ -22,6 +22,39 @@ The container can run by itself as a VPN gateway, or other containers can share 
 - A valid VyprVPN account
 - Host support for `/dev/net/tun`
 
+## Docker Compose
+
+```yaml
+services:
+  vyprvpn:
+    image: kapoko/vyprvpn-wireguard:main
+    container_name: vyprvpn-wireguard
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    environment:
+      - VYPRVPN_USER=${VYPRVPN_USER}
+      - VYPRVPN_PASS=${VYPRVPN_PASS}
+      - VYPRVPN_SERVER=eu1
+    dns:
+      - 1.1.1.1
+      - 9.9.9.9
+    sysctls:
+      - net.ipv4.conf.all.src_valid_mark=1
+      - net.ipv6.conf.all.disable_ipv6=1
+    restart: unless-stopped
+
+  app:
+    image: curlimages/curl:latest
+    network_mode: "service:vyprvpn"
+    depends_on:
+      - vyprvpn
+    command: ["sh", "-c", "while true; do curl -fsS https://ifconfig.me; sleep 300; done"]
+```
+
+When using `network_mode: "service:vyprvpn"`, publish shared-network ports on the `vyprvpn` service, not on the app service.
+
 ## Quick Start
 
 Create a `.env` file next to `docker-compose.yml`:
@@ -34,7 +67,7 @@ VYPRVPN_PASS=your-vyprvpn-password
 Start the container:
 
 ```sh
-docker compose up -d --build
+docker compose up -d
 ```
 
 Check the logs:
@@ -94,38 +127,6 @@ If a command is supplied, the entrypoint connects the VPN first and then execute
 ## Using It As A VPN Gateway
 
 Other containers can use this container's network stack with `network_mode: "service:vyprvpn"`.
-
-Example:
-
-```yaml
-services:
-  vyprvpn:
-    build:
-      context: .
-    container_name: vyprvpn-wireguard
-    cap_add:
-      - NET_ADMIN
-    devices:
-      - /dev/net/tun:/dev/net/tun
-    environment:
-      - VYPRVPN_USER=${VYPRVPN_USER}
-      - VYPRVPN_PASS=${VYPRVPN_PASS}
-      - VYPRVPN_SERVER=eu1
-    dns:
-      - 1.1.1.1
-      - 9.9.9.9
-    sysctls:
-      - net.ipv4.conf.all.src_valid_mark=1
-      - net.ipv6.conf.all.disable_ipv6=1
-    restart: unless-stopped
-
-  app:
-    image: curlimages/curl:latest
-    network_mode: "service:vyprvpn"
-    depends_on:
-      - vyprvpn
-    command: ["sh", "-c", "while true; do curl -fsS https://ifconfig.me; sleep 300; done"]
-```
 
 When using `network_mode: "service:vyprvpn"`, publish ports on the `vyprvpn` service, not on the app service.
 
