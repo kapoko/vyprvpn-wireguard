@@ -142,6 +142,8 @@ environment:
 
 This only opens the container firewall on `wg0`. VyprVPN must also support/allow the inbound traffic you expect.
 
+Published TCP ports remain reachable from Docker/LAN on `eth0` without extra environment configuration. This does not allow normal outbound traffic outside the VPN.
+
 ## Killswitch Behavior
 
 Before connecting, the container allows only the traffic needed for DNS, VyprVPN API access, and the initial WireGuard handshake.

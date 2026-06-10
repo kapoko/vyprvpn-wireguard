@@ -142,6 +142,9 @@ vpn_killswitch_reset() {
 
 vpn_killswitch_hold() {
   vpn_killswitch_reset
+
+  # Allow local web UIs for containers sharing this network namespace.
+  firewall_append INPUT -i eth0 -p tcp -j ACCEPT
 }
 
 vpn_killswitch_apply_pre_connect() {
@@ -166,6 +169,9 @@ vpn_killswitch_apply_pre_connect() {
 
   # Initial WireGuard handshake.
   firewall_append OUTPUT -p udp --dport 51820 -j ACCEPT
+
+  # Allow local web UIs for containers sharing this network namespace.
+  firewall_append INPUT -i eth0 -p tcp -j ACCEPT
 }
 
 resolve_endpoint_ip() {
@@ -250,6 +256,9 @@ vpn_killswitch_apply_connected() {
 
   # Allow only the WireGuard transport packet outside the tunnel.
   firewall_append OUTPUT -o eth0 -p udp -d "$endpoint_ip" --dport "$endpoint_port" -j ACCEPT
+
+  # Allow local web UIs for containers sharing this network namespace.
+  firewall_append INPUT -i eth0 -p tcp -j ACCEPT
 
   # Allow inbound VPN ports, useful for torrent incoming ports etc.
   # Example: VPN_INPUT_PORTS="31770 6881"

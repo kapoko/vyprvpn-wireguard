@@ -43,6 +43,7 @@ iptables -A OUTPUT -p udp --dport 53 -j ACCEPT
 iptables -A OUTPUT -p tcp --dport 53 -j ACCEPT
 iptables -A OUTPUT -p tcp --dport 443 -j ACCEPT
 iptables -A OUTPUT -p udp --dport 51820 -j ACCEPT
+iptables -A INPUT -i eth0 -p tcp -j ACCEPT
 EOF
 
   vpn_killswitch_apply_pre_connect
@@ -72,6 +73,7 @@ iptables -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
 iptables -A OUTPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
 iptables -A OUTPUT -o wg0 -j ACCEPT
 iptables -A OUTPUT -o eth0 -p udp -d 203.0.113.10 --dport 51820 -j ACCEPT
+iptables -A INPUT -i eth0 -p tcp -j ACCEPT
 iptables -A INPUT -i wg0 -p tcp --dport 31770 -j ACCEPT
 iptables -A INPUT -i wg0 -p udp --dport 31770 -j ACCEPT
 iptables -A INPUT -i wg0 -p tcp --dport 6881 -j ACCEPT
