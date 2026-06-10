@@ -34,6 +34,9 @@ RUN set -eux; \
     chmod 755 /usr/local/bin/vyprvpn-wireguard-go
 
 COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+COPY healthcheck.sh /healthcheck.sh
+RUN chmod +x /entrypoint.sh /healthcheck.sh
+
+HEALTHCHECK --interval=30s --timeout=15s --start-period=60s --retries=3 CMD /healthcheck.sh
 
 ENTRYPOINT ["/sbin/tini", "--", "/entrypoint.sh"]

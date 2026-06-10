@@ -15,6 +15,9 @@ services:
       # Optional inbound VPN ports, e.g. torrents.
       - VPN_INPUT_PORTS=31770
       - TZ=Europe/Amsterdam
+    dns:
+      - 1.1.1.1
+      - 9.9.9.9
     sysctls:
       - net.ipv4.conf.all.src_valid_mark=1
       - net.ipv6.conf.all.disable_ipv6=1
