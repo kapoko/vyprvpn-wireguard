@@ -1,4 +1,4 @@
-FROM alpine:3.20
+FROM alpine:3.24
 
 ARG TARGETARCH
 ARG VYPR_ARTICLE_URL="https://support.vyprvpn.com/hc/en-us/articles/43750934530317-VyprVPN-WireGuard-Go-Client-Setup"
