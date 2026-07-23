@@ -27,7 +27,7 @@ The container can run by itself as a VPN gateway, or other containers can share 
 ```yaml
 services:
   vyprvpn:
-    image: kapoko/vyprvpn-wireguard:main
+    image: ghcr.io/kapoko/vyprvpn-wireguard:main
     container_name: vyprvpn-wireguard
     cap_add:
       - NET_ADMIN
