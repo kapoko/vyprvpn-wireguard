@@ -130,6 +130,8 @@ jobs:
               echo "major_pull<<EOF"
               echo "# OR"
               echo "docker pull ghcr.io/${GITHUB_REPOSITORY,,}:${tag%%.*}"
+              echo "# OR"
+              echo "docker pull ghcr.io/${GITHUB_REPOSITORY,,}"
               echo "EOF"
             } >> "$GITHUB_OUTPUT"
           fi
