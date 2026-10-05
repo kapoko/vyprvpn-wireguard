@@ -27,7 +27,7 @@ The container can run by itself as a VPN gateway, or other containers can share 
 ```yaml
 services:
   vyprvpn:
-    image: ghcr.io/kapoko/vyprvpn-wireguard:main
+    image: ghcr.io/kapoko/vyprvpn-wireguard:v1
     container_name: vyprvpn-wireguard
     cap_add:
       - NET_ADMIN
@@ -56,6 +56,9 @@ services:
 When using `network_mode: "service:vyprvpn"`, publish shared-network ports on the `vyprvpn` service, not on the app service.
 
 ## Quick Start
+
+The `v1` tag follows the latest v1 release. Pin an exact release tag, such as
+`v1.0.0`, when you need repeatable deployments.
 
 Create a `.env` file next to `docker-compose.yml`:
 
