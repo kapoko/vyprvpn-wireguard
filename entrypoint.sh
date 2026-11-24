@@ -5,6 +5,7 @@ VYPRVPN_SERVER="${VYPRVPN_SERVER:-eu1}"
 WG_IFACE="${WG_IFACE:-wg0}"
 WG_CONF="/etc/wireguard/${WG_IFACE}.conf"
 VPN_INPUT_PORTS="${VPN_INPUT_PORTS:-}"
+VPN_LOCAL_TCP_ALLOW="${VPN_LOCAL_TCP_ALLOW:-}"
 CHECK_INTERVAL="${CHECK_INTERVAL:-30}"
 COMMAND_ADAPTER="${COMMAND_ADAPTER:-production}"
 COMMAND_LOG="${COMMAND_LOG:-}"
@@ -226,12 +227,42 @@ default_gateway() {
   done
 }
 
+validate_local_tcp_allow() (
+  set -f
+  for entry in $VPN_LOCAL_TCP_ALLOW; do
+    if ! printf '%s\n' "$entry" | awk '
+      BEGIN { FS = "[:.]" }
+      NF != 5 { exit 1 }
+      {
+        for (i = 1; i <= 4; i++) {
+          if ($i !~ /^(0|[1-9][0-9]*)$/ || length($i) > 3 || $i + 0 > 255) exit 1
+        }
+        if ($5 !~ /^[1-9][0-9]*$/ || length($5) > 5 || $5 + 0 > 65535) exit 1
+      }
+    '; then
+      echo "Invalid VPN_LOCAL_TCP_ALLOW entry: $entry (expected IPv4:port)" >&2
+      return 1
+    fi
+  done
+)
+
+apply_local_tcp_allow() (
+  set -f
+  for entry in $VPN_LOCAL_TCP_ALLOW; do
+    host="${entry%:*}"
+    port="${entry##*:}"
+    run_cmd ip route replace "${host}/32" via "$1" dev eth0
+    firewall_append OUTPUT -o eth0 -p tcp -d "$host" --dport "$port" -j ACCEPT
+  done
+)
+
 vpn_killswitch_apply_connected() {
   endpoint_ip="$1"
   endpoint_port="$2"
   wg_iface="$3"
   vpn_input_ports="$4"
 
+  validate_local_tcp_allow
   default_gateway="$(default_gateway)"
 
   if [ -z "$default_gateway" ]; then
@@ -256,6 +287,9 @@ vpn_killswitch_apply_connected() {
 
   # Allow only the WireGuard transport packet outside the tunnel.
   firewall_append OUTPUT -o eth0 -p udp -d "$endpoint_ip" --dport "$endpoint_port" -j ACCEPT
+
+  # Explicit local TCP exceptions are available only in the connected state.
+  apply_local_tcp_allow "$default_gateway"
 
   # Allow local web UIs for containers sharing this network namespace.
   firewall_append INPUT -i eth0 -p tcp -j ACCEPT
@@ -343,6 +377,7 @@ main() {
   : "${VYPRVPN_USER:?Set VYPRVPN_USER}"
   : "${VYPRVPN_PASS:?Set VYPRVPN_PASS}"
 
+  validate_local_tcp_allow
   trap disconnect_vpn INT TERM
 
   connect_vpn

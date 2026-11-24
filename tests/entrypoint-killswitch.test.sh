@@ -84,7 +84,45 @@ EOF
   assert_commands "$expected" "$COMMAND_LOG"
 }
 
+test_local_tcp_allow() {
+  VPN_LOCAL_TCP_ALLOW="192.0.2.10:12345 198.51.100.20:23456"
+  COMMAND_STUB_DIR="$tmpdir/local-stubs"
+  mkdir "$COMMAND_STUB_DIR"
+  printf 'default via 172.18.0.1 dev eth0\n' > "$COMMAND_STUB_DIR/1.out"
+  : > "$COMMAND_LOG"
+  vpn_killswitch_apply_connected "203.0.113.10" "51820" "wg0" "" >/dev/null
+  grep -Fx 'ip route replace 192.0.2.10/32 via 172.18.0.1 dev eth0' "$COMMAND_LOG" >/dev/null
+  grep -Fx 'iptables -A OUTPUT -o eth0 -p tcp -d 192.0.2.10 --dport 12345 -j ACCEPT' "$COMMAND_LOG" >/dev/null
+  grep -Fx 'ip route replace 198.51.100.20/32 via 172.18.0.1 dev eth0' "$COMMAND_LOG" >/dev/null
+  grep -Fx 'iptables -A OUTPUT -o eth0 -p tcp -d 198.51.100.20 --dport 23456 -j ACCEPT' "$COMMAND_LOG" >/dev/null
+
+  COMMAND_STUB_DIR=""
+  : > "$COMMAND_LOG"
+  vpn_killswitch_hold
+  if grep -E '192\.0\.2\.10|198\.51\.100\.20|OUTPUT .*ACCEPT' "$COMMAND_LOG"; then
+    echo "hold state must not allow local exceptions" >&2
+    exit 1
+  fi
+  VPN_LOCAL_TCP_ALLOW=""
+}
+
+test_invalid_local_tcp_allow() {
+  for value in 'example.com:443' '192.168.1.1' '192.168.1.1:0' \
+    '192.168.1.1:65536' '192.168.1.256:80' '192.168.01.1:80' \
+    '192.168.1.1:80:90' '192.168.1.0/24:80' '*:80' \
+    '192.168.1.1:80 10.0.0.1:bad'; do
+    VPN_LOCAL_TCP_ALLOW="$value"
+    if validate_local_tcp_allow 2>/dev/null; then
+      echo "accepted invalid VPN_LOCAL_TCP_ALLOW: $value" >&2
+      exit 1
+    fi
+  done
+  VPN_LOCAL_TCP_ALLOW=""
+}
+
 test_pre_connect_killswitch
 test_connected_killswitch
+test_local_tcp_allow
+test_invalid_local_tcp_allow
 
 echo "entrypoint-killswitch.test.sh: ok"

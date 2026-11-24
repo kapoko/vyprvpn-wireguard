@@ -98,6 +98,7 @@ The compose file passes these environment variables to the container:
 | `VYPRVPN_SERVER` | No | `eu1` | VyprVPN server code to connect to |
 | `WG_IFACE` | No | `wg0` | WireGuard interface name |
 | `VPN_INPUT_PORTS` | No | empty | Space-separated TCP/UDP ports to allow inbound over the VPN |
+| `VPN_LOCAL_TCP_ALLOW` | No | empty | Space-separated explicit IPv4:port destinations allowed outside the VPN while connected |
 | `CHECK_INTERVAL` | No | `30` | VPN monitor interval in seconds |
 | `HEALTHCHECK_MAX_HANDSHAKE_AGE` | No | `180` | Maximum WireGuard handshake age in seconds before health fails |
 | `HEALTHCHECK_DNS_HOST` | No | `cloudflare.com` | Hostname used to verify DNS resolution |
@@ -161,6 +162,22 @@ After connecting, the container:
 - Adds a host route for the VyprVPN endpoint so the WireGuard transport packet does not route into the tunnel itself
 
 If the tunnel goes down, normal traffic remains blocked.
+
+### Local TCP exceptions
+
+Set `VPN_LOCAL_TCP_ALLOW` to allow specific IPv4 and TCP port pairs outside the
+VPN, for example:
+
+```yaml
+environment:
+  - VPN_LOCAL_TCP_ALLOW=192.0.2.10:12345
+```
+
+Separate multiple entries with spaces. Hostnames, CIDR ranges, UDP and IPv6 are
+not supported; invalid entries prevent startup. Exceptions apply to all
+containers sharing the namespace, only while connected. Use trusted addresses:
+private addresses are not enforced. A stale handshake alone does not trigger
+the hold state. Existing pre-connect DNS, TCP 443 and UDP 51820 rules are unchanged.
 
 ## Healthcheck
 
